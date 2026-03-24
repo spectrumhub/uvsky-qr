@@ -1,0 +1,86 @@
+<div style="font-family:Arial;background:#111;color:white;text-align:center;padding:20px;">
+<h1 style="color:orange;">🚛 Spectrum Hub</h1>
+<div id="login">
+  <h3>Login</h3>
+  <input id="email" placeholder="Email"><br><br>
+  <input id="password" type="password" placeholder="Password"><br><br>
+  <button onclick="login()">Login</button>
+</div>
+<div id="app" style="display:none;">
+  <p>Trailer: <span id="trailer"></span></p>
+  <div id="driver" style="display:none;">
+    <h3>Driver Panel</h3>
+    <button onclick="updateTrailer()">Mark Loaded</button>
+  </div>
+</div>
+</div>
+<script>
+const URL = "PASTE_SUPABASE_URL_HERE";
+const KEY = "PASTE_SUPABASE_KEY_HERE";
+
+function getTrailer(){
+  return new URLSearchParams(window.location.search).get('trailer');
+}
+
+async function login(){
+  const res = await fetch(URL + "/auth/v1/token?grant_type=password", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":KEY
+    },
+    body: JSON.stringify({
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value
+    })
+  });
+
+  const data = await res.json();
+
+  if(data.access_token){
+    localStorage.setItem("token", data.access_token);
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("trailer").innerText = getTrailer();
+  } else {
+    alert("Login failed");
+  }
+}
+
+async function logScan(role){
+  await fetch(URL + "/rest/v1/scans", {
+    method:"POST",
+    headers:{
+      "apikey":KEY,
+      "Authorization":"Bearer " + localStorage.getItem("token"),
+      "Content-Type":"application/json"
+    },
+    body: JSON.stringify({
+      trailer_id: getTrailer(),
+      role: role
+    })
+  });
+}
+
+function selectRole(role){
+  logScan(role);
+  document.getElementById("driver").style.display="block";
+}
+
+async function updateTrailer(){
+  await fetch(URL + "/rest/v1/trailers?id=eq." + getTrailer(), {
+    method:"PATCH",
+    headers:{
+      "apikey":KEY,
+      "Authorization":"Bearer " + localStorage.getItem("token"),
+      "Content-Type":"application/json"
+    },
+    body: JSON.stringify({status:"Loaded"})
+  });
+  alert("Updated");
+}
+</script>
+
+id="replacekey"
+PASTE_SUPABASE_URL_HERE
+PASTE_SUPABASE_KEY_HERE
